@@ -1141,7 +1141,12 @@ Neste material, entretanto, o objetivo principal não é desempenho.
 
 O objetivo é **aprender os fundamentos de construção e consumo de
 APIs**.
+------------------------------------------------------------------------
+### A imagem abaixo resume as etapas 7, 8, 9, 10 e 11 deste manual.
 
+Execute essas etapas até decorar o processo.
+
+![exercicio](exercicio1.jpg)
 ------------------------------------------------------------------------
 
 # 7. Preparando o ambiente
