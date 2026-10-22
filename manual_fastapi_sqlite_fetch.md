@@ -1362,9 +1362,15 @@ Em produção, a configuração normalmente será diferente.
 
 # 14. Documentação automática
 
-Uma das grandes vantagens do FastAPI é a documentação automática.
+- Uma das grandes vantagens do FastAPI é a documentação automática.
 
-Abra:
+- Execute o servidor no terminal caso ele não esteja rodando.   
+
+``` bash
+uvicorn main:app --reload
+```
+
+Abra o navegador com o endereço:   
 
 ``` text
 http://127.0.0.1:8000/docs
@@ -1572,7 +1578,15 @@ Resposta:
 
 Agora vamos substituir os dados fixos por dados armazenados em um banco.
 
-SQLite é um banco de dados relacional leve.
+**SQLite3** é um sistema de gerenciamento de banco de dados relacional leve, que armazena todas as informações em um único arquivo no próprio computador, sem precisar de um servidor separado rodando em segundo plano. 
+
+- No Python, ele já vem incluído na biblioteca padrão por meio do módulo sqlite3, o que significa que você pode começar a usá-lo sem instalar nada. 
+
+- Com ele, é possível criar tabelas, inserir, consultar, atualizar e apagar dados usando a linguagem SQL, da mesma forma que se faria em bancos maiores como PostgreSQL ou MySQL. 
+
+- Por ser simples, rápido e fácil de configurar, é muito usado em protótipos, aplicativos de desktop e mobile, scripts de automação e projetos pequenos ou médios que precisam guardar dados de maneira organizada e persistente, sem a complexidade de administrar um servidor de banco de dados.
+
+![bd-sqlite](bd-sqlite.jpg)
 
 Uma vantagem importante para nosso projeto didático é que não precisamos
 instalar um servidor de banco de dados.
@@ -1587,11 +1601,15 @@ alunos.db
 
 # 21. Estrutura inicial do banco
 
-Crie o arquivo:
+Crie o arquivo (na mesma pasta do arquivo main.py):
 
 ``` text
 database.py
 ```
+**Atencao: ** 
+- No item 37 voce encontra o codigo completo do arquivo **main.py**.
+- No item 38 voce encontra o codigo completo do arquivo **database.py**.
+- Sugiro que voce pegue o codigo pronto e em seguida acompanhe o passo a passo de sua construcao.
 
 Conteúdo:
 
@@ -1600,14 +1618,15 @@ import sqlite3
 
 
 def conectar():
-    return sqlite3.connect("alunos.db")
+    return sqlite3.connect("alunos.db") # cria a conexão com o banco de dados
 
 
 def criar_tabela():
-    conexao = conectar()
+    
+    conexao = conectar()      # conecta ao banco de dados
+    cursor = conexao.cursor() # cria o cursor
 
-    cursor = conexao.cursor()
-
+    #cria a tabela alunos com os campos id, nome, email e idade
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS alunos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1617,8 +1636,8 @@ def criar_tabela():
         )
     """)
 
-    conexao.commit()
-    conexao.close()
+    conexao.commit()          # confirma as alterações no banco de dados
+    conexao.close()           # fecha a conexão com o banco de dados
 ```
 
 ------------------------------------------------------------------------
@@ -1656,35 +1675,51 @@ será preenchido automaticamente.
 
 # 23. Criando a tabela ao iniciar a aplicação
 
-No `main.py`:
+No `main.py` substituia o conteúdo por este conteudo:
 
 ``` python
-from fastapi import FastAPI
-from database import criar_tabela
+from fastapi import FastAPI         # Importa a classe FastAPI
+from database import criar_tabela   # importa a função criar_tabela do arquivo database.py
 
-app = FastAPI()
+app = FastAPI()                     # Cria a instância da API 
 
-criar_tabela()
-
-
-@app.get("/")
-def inicio():
-    return {"mensagem": "API de alunos"}
+criar_tabela()                      # Cria a tabela ao iniciar a aplicação 
+ 
+@app.get("/")                       # Define a rota inicial   
+def inicio():                       # Define a função que será executada quando a rota for acessada     
+    return {"msg": "API de alunos"} # Retorna uma mensagem em formato JSON
 ```
 
 Agora, quando a aplicação iniciar, a tabela será criada.
+
+**Teste sua aplicacao**
+
+```bash
+uvicorn main:app --reload
+```
+
+Abra:
+
+``` text
+http://127.0.0.1:8000/
+```
+
 
 ------------------------------------------------------------------------
 
 # 24. Inserindo dados no SQLite
 
-Podemos criar uma função:
+Podemos criar uma função e deixa-la pronta para testa-la.
+- Primeiro vamos testa-la com o swagger, que é uma interface grafica gerada automaticamente pelo fastapi para testar os endpoints.
+- Depois vamos testa-a com um programa HTML+JS no frontend para consumir esta API.
+- No momento, apenas copie e cole esse codigo em seu arquivo database.py sem testa-lo.
+
+**No `database.py`, copie e cole a funcao abaixo:**
 
 ``` python
 def inserir_aluno(nome, email, idade):
 
     conexao = conectar()
-
     cursor = conexao.cursor()
 
     cursor.execute("""
@@ -1693,7 +1728,6 @@ def inserir_aluno(nome, email, idade):
     """, (nome, email, idade))
 
     conexao.commit()
-
     conexao.close()
 ```
 
@@ -1716,13 +1750,17 @@ diretamente valores fornecidos pelo usuário.
 
 # 25. Consultando os alunos
 
-No `database.py`:
+- Aqui, estamos construindo uma outra funcao para o arquivo database.py. 
+- Essa funcao vai retornar todos os alunos cadastrados no banco de dados.
+- No momento, apenas copie e cole esse codigo em seu arquivo database.py sem testa-lo.
+- So poderemos testar essa funcao depois de inserir dados no banco de dados.
+
+**No `database.py`, copie e cole a funcao abaixo:**
 
 ``` python
 def buscar_alunos():
 
     conexao = conectar()
-
     cursor = conexao.cursor()
 
     cursor.execute("""
@@ -1730,9 +1768,27 @@ def buscar_alunos():
         FROM alunos
     """)
 
-    alunos = cursor.fetchall()
-
+    registros = cursor.fetchall()
     conexao.close()
+
+    alunos = []
+    # todos os registros recuperados são listas de tuplas 
+    # exemplo: [(1, "Ana", "ana@email.com", 20), (2, "Carlos", "carlos@email.com", 22)]
+    # para o FastAPI é mais conveniente retornar dicionários
+    # ou seja, transformar em listas de dicionário
+    # exemplo:[ { "id": 1, "nome": "Ana", "email": "ana@email.com", "idade": 20 }, { "id": 2, "nome": "Carlos", "email": "carlos@email.com", "idade": 22 } ]
+    # 
+    # Em python, uma lista de tuplas pode ser convertida em uma lista de dicionários
+    # usando o list comprehension
+    # exemplo: [{"id": registro[0], "nome": registro[1], "email": registro[2], "idade": registro[3]} for registro in registros] 
+    for registro in registros:
+        aluno = {
+            "id": registro[0],
+            "nome": registro[1],
+            "email": registro[2],
+            "idade": registro[3]
+        }
+        alunos.append(aluno)
 
     return alunos
 ```
@@ -1765,40 +1821,6 @@ Para uma API, é mais conveniente retornar objetos:
 ]
 ```
 
-Podemos fazer:
-
-``` python
-def buscar_alunos():
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-        SELECT id, nome, email, idade
-        FROM alunos
-    """)
-
-    registros = cursor.fetchall()
-
-    conexao.close()
-
-    alunos = []
-
-    for registro in registros:
-
-        aluno = {
-            "id": registro[0],
-            "nome": registro[1],
-            "email": registro[2],
-            "idade": registro[3]
-        }
-
-        alunos.append(aluno)
-
-    return alunos
-```
-
 ------------------------------------------------------------------------
 
 # 27. Criando o endpoint GET
@@ -1807,24 +1829,21 @@ No `main.py`:
 
 ``` python
 from fastapi import FastAPI
-from database import criar_tabela, buscar_alunos
+from database import criar_tabela, buscar_alunos # repare que foi adicionado buscar_alunos na importação    
 
-app = FastAPI()
+app = FastAPI()                         # Cria a instância da API 
 
-criar_tabela()
+criar_tabela()                          # Cria a tabela ao iniciar a aplicação
+
+@app.get("/")                           # Define a rota inicial
+def inicio():                           # Define a função que será executada quando a rota for acessada
+    return {"mensagem": "API de alunos"} # Retorna uma mensagem em formato JSON
 
 
-@app.get("/")
-def inicio():
-    return {"mensagem": "API de alunos"}
-
-
-@app.get("/alunos")
-def listar_alunos():
-
-    alunos = buscar_alunos()
-
-    return alunos
+@app.get("/alunos")                     # Define a rota inicial
+def listar_alunos():                    # Define a função que será executada quando a rota for acessada
+    alunos = buscar_alunos()            # Busca os alunos no banco de dados
+    return alunos                       # Retorna os alunos em formato JSON
 ```
 
 Agora:
@@ -1839,15 +1858,27 @@ consulta o SQLite.
 
 # 28. Pydantic
 
-Para receber dados corretamente estruturados, utilizaremos modelos
-Pydantic.
+**Pydantic** é uma biblioteca Python que serve para validar e organizar dados de forma automática, usando as anotações de tipo (type hints) da própria linguagem. 
 
-No `main.py`:
+![type-hint](type-hint.jpg)
+
+- Em vez de escrever manualmente várias verificações para saber se um campo é um número, uma data ou um e-mail válido, você define uma classe descrevendo o formato esperado dos dados, e o Pydantic confere se as informações recebidas, vindas de uma API, de um formulário ou de um arquivo JSON, por exemplo, realmente seguem essa estrutura. 
+
+- Quando possível, ele converte os valores automaticamente (como transformar a string “42” no inteiro 42) e, quando algo está errado, devolve mensagens de erro claras indicando o que falhou. 
+
+- Por isso, é muito usado em aplicações web e APIs, como no framework FastAPI, para garantir que os dados sejam confiáveis, reduzir bugs e deixar o código mais limpo e legível.
+
+![pydantic](Pydantic.jpg)
+
+No `main.py`, insira o código abaixo na linha 3:
 
 ``` python
 from pydantic import BaseModel
+```
 
+E na linha 5 insira a classe Aluno que herda de BaseModel (isso é POO na veia!): 
 
+``` python
 class Aluno(BaseModel):
     nome: str
     email: str
@@ -1863,6 +1894,7 @@ Esse modelo define o formato esperado:
     "idade": 20
 }
 ```
+**Atencao:** Alunos, voces ainda nao estudaram POO, fiquem tranquilos que sera abordado em breve, no momento so quero que voces entendam que o Pydantic e uma ferramenta para validar e organizar dados de forma automatica usando as anotações de tipo (type hints) da propria linguagem. 
 
 ------------------------------------------------------------------------
 
@@ -1890,6 +1922,16 @@ O FastAPI receberá um JSON e o transformará em um objeto `Aluno`.
 ------------------------------------------------------------------------
 
 # 30. Testando o POST pelo Swagger
+
+**Swagger** é um conjunto de ferramentas para descrever, documentar e testar APIs de maneira padronizada, baseado na especificação OpenAPI. 
+
+- Em vez de escrever manualmente um documento explicando cada rota da sua API, quais parâmetros ela recebe e quais respostas devolve, você descreve isso em um formato estruturado (geralmente JSON ou YAML), e o Swagger transforma essa descrição em uma página web interativa, conhecida como Swagger UI. 
+
+- Nessa página, qualquer pessoa pode visualizar todos os endpoints disponíveis e até executar requisições reais diretamente pelo navegador, sem precisar escrever código ou usar ferramentas externas. Por isso, ele é muito usado para facilitar a comunicação entre equipes de back-end e front-end, ajudar novos desenvolvedores a entenderem uma API rapidamente e manter a documentação sempre atualizada. 
+
+- Frameworks como o FastAPI, inclusive, geram essa documentação automaticamente, o que torna o desenvolvimento mais rápido e menos propenso a erros.
+
+![swaggger](swaggger.jpg)
 
 Abra:
 
