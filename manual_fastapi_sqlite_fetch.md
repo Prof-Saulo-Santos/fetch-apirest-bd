@@ -4629,3 +4629,442 @@ def listar_alunos():
 ```
 
 você estará aprendendo o mesmo conceito fundamental utilizado em uma API profissional. Estamos apenas executando tudo de maneira **simplificada e local**, para que possamos entender primeiro o funcionamento da aplicação antes de introduzir toda a complexidade da infraestrutura corporativa.
+
+------------------------------------------------------------------------
+
+# Adendo: Primeiros Passos com o Git
+
+Ao longo desta apostila, você construiu arquivos como `main.py`, `database.py` e `index.html`. Conforme um projeto cresce e ganha novas funcionalidades, surge uma necessidade essencial: **como registrar o histórico das alterações e salvar versões seguras do código sem precisar criar pastas como `projeto_copia`, `projeto_final`, `projeto_final_v2`?**
+
+É exatamente para isso que serve o **Git**.
+
+---
+
+## A.1. O que é o Git?
+
+O **Git** é um sistema de controle de versão (*Version Control System*).
+
+Podemos pensar no Git como um sistema de **"pontos de salvamento" (*save games* ou *checkpoints*)** de um jogo:
+- Você escreve ou altera seu código;
+- Testa e confirma que a funcionalidade está funcionando;
+- Cria um ponto de salvamento oficial (chamado de **commit**);
+- Caso cometa um engano mais tarde ou queira consultar o que foi feito no passado, você pode consultar o histórico ou restaurar o estado salvo.
+
+O Git opera localmente no seu computador e não depende obrigatoriamente de conexão com a Internet para guardar o histórico das suas alterações.
+
+---
+
+## A.2. Instalando o Git
+
+### No Windows
+1. Acesse o site oficial: [https://git-scm.com/](https://git-scm.com/)
+2. Baixe o instalador (*Git for Windows*).
+3. Execute o instalador. Durante o processo de instalação, pode manter as opções padrão sugeridas.
+4. O instalador configurará o **Git Bash**, um terminal excelente e prático para executar os comandos do Git e do Linux no Windows.
+
+### No Linux (Ubuntu / Debian / Mint)
+Abra o terminal e execute:
+
+```bash
+sudo apt update
+sudo apt install git -y
+```
+
+### No macOS
+Abra o terminal e digite:
+
+```bash
+git --version
+```
+
+Se o Git ainda não estiver instalado, o próprio sistema abrirá uma janela oferecendo a instalação automática das ferramentas de desenvolvimento (*Command Line Developer Tools*). Caso utilize o Homebrew:
+
+```bash
+brew install git
+```
+
+### Verificando a instalação
+Para confirmar que o Git está pronto para uso, abra o terminal e digite:
+
+```bash
+git --version
+```
+
+A saída exibirá a versão instalada, por exemplo:
+
+```text
+git version 2.43.0
+```
+
+---
+
+## A.3. Configuração inicial obrigatória (Quem é você?)
+
+Antes de registrar o primeiro salvamento, o Git precisa saber **quem é o autor** das alterações. Essa etapa é realizada apenas uma vez por computador.
+
+No terminal, execute os comandos abaixo substituindo pelos seus dados reais:
+
+```bash
+git config --global user.name "Seu Nome Completo"
+git config --global user.email "seu_email@exemplo.com"
+```
+
+Para conferir se os dados foram salvos corretamente:
+
+```bash
+git config --list
+```
+
+---
+
+## A.4. O ciclo de trabalho do Git: os três estados
+
+Para compreender o fluxo de trabalho do Git sem complicação, imagine três áreas:
+
+```text
+┌─────────────────────────┐      git add       ┌─────────────────────────┐     git commit      ┌─────────────────────────┐
+│  Diretório de Trabalho  │ ─────────────────> │   Área de Preparação    │ ──────────────────> │       Repositório       │
+│   (Working Directory)   │                    │     (Staging Area)      │                     │       (Histórico)       │
+│                         │                    │                         │                     │                         │
+│  Arquivos que você      │                    │  A "caixa" onde você    │                     │  Ponto de salvamento    │
+│  está editando agora    │                    │  separa o que vai salvar│                     │  definitivo (commit)    │
+└─────────────────────────┘                    └─────────────────────────┘                     └─────────────────────────┘
+```
+
+1. **Diretório de Trabalho (*Working Directory*):** é a pasta do projeto onde você cria e edita seus arquivos normalmente (`main.py`, `database.py`, etc.).
+2. **Área de Preparação (*Staging Area*):** é a área intermediária onde você escolhe e separa quais arquivos modificados farão parte do próximo salvamento.
+3. **Repositório (*Repository*):** é o banco de dados interno do Git (armazenado na pasta oculta `.git`), onde ficam guardados em definitivo todos os registros (*commits*) e mensagens do histórico.
+
+---
+
+## A.5. O arquivo `.gitignore` (Essencial em projetos Python!)
+
+Antes de pedir ao Git para acompanhar seus arquivos, é muito importante ensinar a ele o que **NÃO** deve ser salvo no histórico.
+
+No nosso projeto com FastAPI e SQLite, existem arquivos temporários que não pertencem ao controle de versão:
+- A pasta do ambiente virtual (`venv/`), que qualquer pessoa pode recriar com facilidade;
+- Os arquivos de cache compilados pelo Python (`__pycache__/` e `*.pyc`);
+- O arquivo de banco de dados local (`alunos.db`), especialmente em testes onde cada desenvolvedor gera seus próprios dados.
+
+Crie um arquivo chamado exatamente `.gitignore` (com um ponto na frente) na raiz do projeto:
+
+```text
+fastapi_sqlite/
+├── .gitignore
+├── database.py
+├── main.py
+└── frontend/
+    └── index.html
+```
+
+Dentro de `.gitignore`, adicione:
+
+```text
+# Ambiente virtual
+venv/
+.venv/
+
+# Caches do Python
+__pycache__/
+*.pyc
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+```
+
+---
+
+## A.6. Passo a passo prático no projeto
+
+Vamos acompanhar os comandos fundamentais utilizando o projeto deste manual como exemplo.
+
+### 1. Iniciar o repositório (`git init`)
+Navegue pelo terminal até a pasta do projeto:
+
+```bash
+cd fastapi_sqlite
+```
+
+E inicialize o controle de versão:
+
+```bash
+git init
+```
+
+O Git criará uma pasta oculta chamada `.git`. É dentro dela que todo o histórico de versões será guardado.
+
+---
+
+### 2. Verificar o estado dos arquivos (`git status`)
+O comando mais utilizado no dia a dia é o `git status`. Ele informa a situação atual de cada arquivo:
+
+```bash
+git status
+```
+
+Se você acabou de criar ou editar arquivos, eles aparecerão em vermelho sob a lista de **Untracked files** (arquivos não rastreados). O Git sabe que eles existem, mas ainda não foram colocados na área de preparação.
+
+---
+
+### 3. Preparar os arquivos para o salvamento (`git add`)
+Para colocar os arquivos na área de preparação (*staging area*), usamos o `git add`.
+
+Podemos adicionar um arquivo individual:
+
+```bash
+git add main.py
+```
+
+Ou adicionar de uma vez todos os arquivos modificados da pasta atual (respeitando o que foi ignorado no `.gitignore`):
+
+```bash
+git add .
+```
+
+Ao executar novamente:
+
+```bash
+git status
+```
+
+Você verá os arquivos em verde sob **Changes to be committed** (prontos para serem salvos).
+
+---
+
+### 4. Salvar o ponto no histórico (`git commit`)
+O *commit* grava permanentemente as alterações preparadas no repositório.
+
+Todo commit deve vir acompanhado de uma mensagem clara que explique o que foi realizado:
+
+```bash
+git commit -m "Estrutura inicial da API FastAPI com SQLite e frontend fetch"
+```
+
+O parâmetro `-m` permite informar a mensagem diretamente no comando.
+
+Procure escrever mensagens objetivas que expliquem o propósito da alteração:
+- `"Cria modelo de dados Aluno com Pydantic"`
+- `"Adiciona endpoint GET para consultar aluno por ID"`
+- `"Implementa exclusão de aluno com método DELETE"`
+
+---
+
+### 5. Consultar o histórico de salvamentos (`git log`)
+Para visualizar o histórico cronológico de salvamentos:
+
+```bash
+git log
+```
+
+O terminal exibirá:
+- O identificador único de cada salvamento (chamado de *hash*);
+- O nome e o e-mail do autor;
+- A data e o horário do registro;
+- A mensagem descritiva do commit.
+
+Para uma visualização compacta (uma linha por salvamento):
+
+```bash
+git log --oneline
+```
+
+---
+
+### 6. Ver as alterações antes de salvar (`git diff`)
+Se você alterar algum arquivo que já estava salvo e quiser ver exatamente o que mudou linha por linha antes de adicioná-lo:
+
+```bash
+git diff
+```
+
+As linhas removidas aparecerão em vermelho precedidas por `-`, e as linhas adicionadas aparecerão em verde precedidas por `+`.
+
+---
+
+## A.7. Resumo dos comandos essenciais
+
+| Comando | Para que serve? |
+| :--- | :--- |
+| `git --version` | Exibe a versão instalada do Git no sistema. |
+| `git config --global user.name "Nome"` | Define o nome do autor para os commits. |
+| `git config --global user.email "email"` | Define o e-mail do autor para os commits. |
+| `git init` | Inicializa um repositório Git na pasta atual. |
+| `git status` | Exibe a situação dos arquivos (modificados, preparados, etc.). |
+| `git add <arquivo>` | Adiciona um arquivo específico à área de preparação. |
+| `git add .` | Adiciona todos os arquivos modificados à área de preparação. |
+| `git commit -m "mensagem"` | Registra permanentemente um ponto de salvamento com uma descrição. |
+| `git log` | Exibe o histórico detalhado dos salvamentos do projeto. |
+| `git log --oneline` | Exibe o histórico de forma resumida (uma linha por salvamento). |
+| `git diff` | Exibe as diferenças linha por linha dos arquivos modificados. |
+
+---
+
+## A.8. O ciclo de ouro para o dia a dia
+
+Para manter seu projeto sempre seguro e organizado, adote esta sequência de passos:
+
+```text
+1. Edite o código e teste sua aplicação
+   ↓
+2. git status (veja o que foi alterado)
+   ↓
+3. git add . (coloque as alterações na área de preparação)
+   ↓
+4. git commit -m "Descreva com clareza a funcionalidade criada" (salve o ponto na história)
+```
+
+Com esse ciclo simples, você garante um histórico confiável de todo o desenvolvimento sem perder código e sem criar pastas duplicadas.
+
+---
+
+## A.9. E o GitHub? Levando seu código para a nuvem
+
+Até este momento, tudo o que você fez com o Git aconteceu **exclusivamente dentro do seu computador**.
+
+Se o seu computador apresentar uma falha no disco rígido ou precisar ser formatado, você ainda correria o risco de perder seus arquivos. Além disso, como você mostraria seu projeto para um professor, colega de estudos ou recrutador de uma empresa?
+
+É exatamente aqui que entra o **GitHub**.
+
+---
+
+### A.9.1. Git vs. GitHub: não confunda!
+
+Essa é uma das dúvidas mais comuns entre iniciantes:
+
+```text
+┌──────────────────────────────────────┐      ┌──────────────────────────────────────┐
+│                 Git                  │      │                GitHub                │
+├──────────────────────────────────────┤      ├──────────────────────────────────────┤
+│ • Ferramenta (software) no seu PC    │      │ • Serviço / plataforma na nuvem      │
+│ • Funciona offline (sem internet)    │      │ • Funciona online (acessado via web) │
+│ • Cria e gerencia os commits locais  │      │ • Hospeda e compartilha repositórios │
+│ • Como a câmera que tira as fotos    │      │ • Como a rede social onde você posta │
+└──────────────────────────────────────┘      └──────────────────────────────────────┘
+```
+
+> **Resumo:** O **Git** é a ferramenta de controle de versão que grava os passos na sua máquina. O **GitHub** é a plataforma na web que guarda uma cópia remota do seu repositório Git na nuvem e permite compartilhá-lo com o mundo.
+
+---
+
+### A.9.2. Passo 1: Criando uma conta no GitHub
+
+1. Acesse: [https://github.com/](https://github.com/)
+2. Clique no botão **Sign up** (Cadastre-se).
+3. Informe seu e-mail, crie uma senha segura e escolha um nome de usuário (*username*).
+4. Confirme seu e-mail através do código de verificação enviado pelo GitHub.
+
+---
+
+### A.9.3. Passo 2: Criando um novo repositório no GitHub
+
+Com a sua conta criada e conectada:
+
+1. No canto superior direito da página do GitHub, clique no ícone **`+`** e selecione **New repository** (Novo repositório).
+2. No campo **Repository name**, digite um nome para o seu projeto (por exemplo: `api-alunos-fastapi`).
+3. Escolha a visibilidade:
+   - **Public:** qualquer pessoa na internet poderá ver seu código (excelente para montar portfólio profissional);
+   - **Private:** apenas você e pessoas convidadas por você poderão visualizar.
+4. **MUITO IMPORTANTE:** Deixe as caixas *Add a README file*, *Add .gitignore* e *Choose a license* **desmarcadas**.
+   - *Por que desmarcadas?* Porque nós já criamos o projeto e o nosso próprio arquivo `.gitignore` no computador local! Se você marcar essas caixas, o GitHub criará arquivos diferentes na nuvem, o que causará divergências na hora do primeiro envio.
+5. Clique no botão verde **Create repository**.
+
+---
+
+### A.9.4. Passo 3: Conectando o repositório local ao GitHub
+
+Assim que o repositório for criado, o GitHub exibirá uma página com a URL do seu repositório remoto. O endereço terá um formato como:
+
+```text
+https://github.com/seu-usuario/api-alunos-fastapi.git
+```
+
+Agora, abra o terminal dentro da pasta do seu projeto local (`fastapi_sqlite`) e vincule o seu repositório local ao repositório na nuvem:
+
+```bash
+git remote add origin https://github.com/seu-usuario/api-alunos-fastapi.git
+```
+
+Entendendo o comando:
+- `git remote add`: diz ao Git local para cadastrar um servidor remoto.
+- `origin`: é o nome/apelido padrão que o Git usa para se referir ao servidor remoto principal (o seu GitHub).
+- `https://...`: é o endereço web exato do seu repositório no GitHub.
+
+Para conferir se a conexão remota foi registrada corretamente:
+
+```bash
+git remote -v
+```
+
+---
+
+### A.9.5. Passo 4: Enviando seus commits para a nuvem (`git push`)
+
+Com o repositório local conectado ao GitHub, você pode "empurrar" (*push*) os seus commits da máquina para a nuvem:
+
+```bash
+git push -u origin main
+```
+
+O que este comando faz:
+- `push`: transfere os salvamentos registrados na sua máquina para o servidor remoto.
+- `-u origin main`: estabelece a ligação direta entre o fluxo do seu computador e o servidor remoto `origin`. Nas próximas vezes em que fizer novos commits, bastará digitar apenas `git push`!
+
+> [!NOTE]
+> **Autenticação no primeiro envio:**  
+> Na primeira vez em que você executar o comando `git push`, o sistema solicitará autorização de acesso ao GitHub. No VS Code ou no Windows (Git Credential Manager), uma janela do navegador se abrirá automaticamente para você confirmar o login com um clique. No terminal puro Linux, a autenticação pode ser feita gerando um *Personal Access Token* (PAT) nas configurações de desenvolvedor do GitHub ou utilizando uma chave SSH.
+
+Assim que o comando for concluído, retorne à página do seu repositório no GitHub e recarregue a página (`F5`). Você verá todos os seus arquivos (`main.py`, `database.py`, pasta `frontend/`) e todo o histórico de commits publicados na web!
+
+---
+
+### A.9.6. Trazendo e sincronizando o código
+
+Ao trabalhar com repositórios no GitHub, dois comandos se tornam muito comuns:
+
+#### 1. Baixar um projeto pronto para um novo computador (`git clone`)
+Se você for trabalhar em outro computador ou quiser baixar o projeto de um colega ou professor, não precisa copiar arquivos em pendrive. Basta copiar a URL do projeto no GitHub e executar:
+
+```bash
+git clone https://github.com/seu-usuario/api-alunos-fastapi.git
+```
+
+O Git fará o download completo da pasta, com todos os arquivos e o histórico de commits, pronta para uso.
+
+#### 2. Atualizar o computador com as novidades da nuvem (`git pull`)
+Se você fez alterações em outro computador ou diretamente no GitHub e agora quer atualizar a pasta do seu computador atual:
+
+```bash
+git pull
+```
+
+O `git pull` baixa as novidades da nuvem e as aplica diretamente nos seus arquivos locais.
+
+---
+
+### A.9.7. Resumo visual e comandos do GitHub
+
+```text
+SEU COMPUTADOR (LOCAL)                            GITHUB (NUVEM)
+──────────────────────                            ──────────────
+                                git push
+Repositório Local  ─────────────────────────────────>  Repositório Remoto
+(seus commits)                                         (cópia na web)
+                                git pull
+Repositório Local  <─────────────────────────────────  Repositório Remoto
+(atualizado)                                           (com as novidades)
+
+                                git clone
+Pasta nova no PC   <─────────────────────────────────  Copia projeto inteiro
+```
+
+| Comando | O que faz? |
+| :--- | :--- |
+| `git remote add origin <URL>` | Conecta o repositório local ao repositório remoto no GitHub. |
+| `git remote -v` | Exibe os endereços remotos configurados. |
+| `git push -u origin main` | Envia pela primeira vez os commits locais para o GitHub. |
+| `git push` | Envia novos commits locais para a nuvem. |
+| `git pull` | Baixa novidades da nuvem para a máquina local. |
+| `git clone <URL>` | Baixa uma cópia completa de um repositório existente para seu computador. |
+
+
