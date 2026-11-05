@@ -2640,9 +2640,9 @@ dados JavaScript
 
 ------------------------------------------------------------------------
 
-# 45. Testando GET com JavaScript
+# 45. Testando GET com JavaScript (isso é apenas um olá mundo!)
 
-Crie:
+Crie uma pasta denominada `frontend` e dentro dela o arquivo `index.html`:
 
 ``` text
 frontend/index.html
@@ -2673,7 +2673,7 @@ Conteúdo inicial:
             try {
 
                 let response = await fetch(
-                    "http://127.0.0.1:8000/alunos"
+                    "http://127.0.0.1:8000/alunos" // vamos acessar o endpoint...
                 );
 
                 let dados = await response.json();
@@ -2683,7 +2683,7 @@ Conteúdo inicial:
             } catch (erro) {
 
                 console.log(
-                    `O erro retornado foi ${erro}.`
+                    `O erro retornado foi ${erro}.`// ... e jogar a resposta no console!
                 );
             }
         }
@@ -2709,11 +2709,75 @@ Depois abra:
 Console
 ```
 
-Você deverá visualizar os dados retornados pela API.
+Você deverá visualizar o seguinte erro: 
+
+`Access to fetch at 'http://127.0.0.1:8000/alunos' from origin 'http://localhost:5500' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.`
 
 ------------------------------------------------------------------------
 
-# 46. Melhorando o tratamento de erros
+# 46. CORS
+
+Existe uma questão importante quando frontend e backend são executados
+em origens diferentes. Verique que a mensagem de erro mostra as portas 8000 e 5500!
+
+Por exemplo:
+
+``` text
+Frontend:
+http://localhost:5500
+
+Backend:
+http://127.0.0.1:8000
+```
+
+O navegador pode bloquear a comunicação por causa da política de mesma
+origem.
+
+Para permitir comunicação durante o desenvolvimento, podemos configurar
+CORS.
+
+No FastAPI (main.py), adicione a importacao de `CORSMiddleware` na linha 3 do arquivo:
+
+``` python
+from fastapi.middleware.cors import CORSMiddleware
+```
+
+Depois, na linha 21 adicione:
+
+``` python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+```
+
+#### Volte no navegador que estava com erro, você verá os registros de nosso BD.
+
+## Atenção
+
+O uso:
+
+``` python
+allow_origins=["*"]
+```
+
+é conveniente para fins didáticos.
+
+Em produção, é preferível especificar as origens autorizadas.
+
+Exemplo:
+
+``` python
+allow_origins=[
+    "http://localhost:5500"
+]
+```
+
+------------------------------------------------------------------------
+# 47. Melhorando o tratamento de erros (você pode pular essa seção se quiser)
 
 Uma versão mais robusta é:
 
@@ -2750,9 +2814,10 @@ async function consultarAlunos() {
 
 ------------------------------------------------------------------------
 
-# 47. GET de um aluno
+# 48. GET de um aluno
 
-Podemos criar:
+Podemos criar uma função para acessar o endpoint `alunos/{id}`.
+Copie e cole o trecho de codigo abaixo na linha 47 do arquivo `index.html`:
 
 ``` javascript
 async function consultarAluno(id) {
@@ -2781,6 +2846,8 @@ async function consultarAluno(id) {
         );
     }
 }
+
+consultarAluno(2) // coloque aqui dentro a id de um registro válido
 ```
 
 Observe o uso de template literal:
@@ -2792,469 +2859,40 @@ Observe o uso de template literal:
 Se:
 
 ``` javascript
-id = 5
+id = 2
 ```
 
 a URL será:
 
 ``` text
-http://127.0.0.1:8000/alunos/5
+http://127.0.0.1:8000/alunos/2
 ```
 
 ------------------------------------------------------------------------
 
-# 48. POST com `fetch()`
+# 49. Código completo do frontend (`index.html`)
 
-Para enviar dados, precisamos especificar:
+Agora vamos integrar todo o código HTML e JavaScript em um único arquivo: `frontend/index.html`.
 
-``` javascript
-method: "POST"
-```
+Esse arquivo reúne:
+- A interface com formulário de cadastro, botões de ação e área de resultados;
+- As funções de comunicação com a nossa API utilizando `fetch()` e `async/await` para todas as operações do CRUD (`GET`, `POST`, `PUT` e `DELETE`);
+- Execução disparada por eventos (`onclick`), evitando que funções de gravação/alteração sejam chamadas automaticamente no carregamento da página (o que provocaria loops com ferramentas de recarregamento automático, como o Live Server).
 
-e enviar o JSON:
-
-``` javascript
-body: JSON.stringify(aluno)
-```
-
-Exemplo:
-
-``` javascript
-async function cadastrarAluno() {
-
-    let aluno = {
-
-        nome: "João",
-        email: "joao@email.com",
-        idade: 21
-
-    };
-
-    try {
-
-        let response = await fetch(
-            "http://127.0.0.1:8000/alunos",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify(aluno)
-            }
-        );
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Erro HTTP: ${response.status}`
-            );
-        }
-
-        let dados = await response.json();
-
-        console.log(dados);
-
-    } catch (erro) {
-
-        console.log(
-            `O erro retornado foi ${erro}.`
-        );
-    }
-}
-```
-
-------------------------------------------------------------------------
-
-# 49. Entendendo o POST
-
-Temos:
-
-``` javascript
-method: "POST"
-```
-
-Isso informa que queremos criar um recurso.
-
-Temos:
-
-``` javascript
-headers: {
-    "Content-Type": "application/json"
-}
-```
-
-Isso informa ao servidor que o corpo da requisição contém JSON.
-
-Temos:
-
-``` javascript
-body: JSON.stringify(aluno)
-```
-
-Isso transforma o objeto JavaScript:
-
-``` javascript
-{
-    nome: "João",
-    email: "joao@email.com",
-    idade: 21
-}
-```
-
-em JSON.
-
-------------------------------------------------------------------------
-
-# 50. `JSON.stringify()`
-
-Antes:
-
-``` javascript
-let aluno = {
-    nome: "João",
-    idade: 21
-};
-```
-
-Depois:
-
-``` javascript
-JSON.stringify(aluno)
-```
-
-resultado:
-
-``` json
-{
-    "nome": "João",
-    "idade": 21
-}
-```
-
-O `fetch()` envia esse JSON para o FastAPI.
-
-------------------------------------------------------------------------
-
-# 51. PUT com `fetch()`
-
-Para alterar:
-
-``` javascript
-async function alterarAluno(id) {
-
-    let aluno = {
-
-        nome: "João da Silva",
-        email: "joao.silva@email.com",
-        idade: 22
-
-    };
-
-    try {
-
-        let response = await fetch(
-            `http://127.0.0.1:8000/alunos/${id}`,
-            {
-                method: "PUT",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify(aluno)
-            }
-        );
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Erro HTTP: ${response.status}`
-            );
-        }
-
-        let dados = await response.json();
-
-        console.log(dados);
-
-    } catch (erro) {
-
-        console.log(
-            `O erro retornado foi ${erro}.`
-        );
-    }
-}
-```
-
-------------------------------------------------------------------------
-
-# 52. DELETE com `fetch()`
-
-Para excluir:
-
-``` javascript
-async function excluirAluno(id) {
-
-    try {
-
-        let response = await fetch(
-            `http://127.0.0.1:8000/alunos/${id}`,
-            {
-                method: "DELETE"
-            }
-        );
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Erro HTTP: ${response.status}`
-            );
-        }
-
-        let dados = await response.json();
-
-        console.log(dados);
-
-    } catch (erro) {
-
-        console.log(
-            `O erro retornado foi ${erro}.`
-        );
-    }
-}
-```
-
-------------------------------------------------------------------------
-
-# 53. CRUD completo no JavaScript
-
-Podemos resumir:
-
-``` javascript
-// GET
-await fetch(
-    "http://127.0.0.1:8000/alunos"
-);
-
-
-// GET por ID
-await fetch(
-    `http://127.0.0.1:8000/alunos/${id}`
-);
-
-
-// POST
-await fetch(
-    "http://127.0.0.1:8000/alunos",
-    {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(aluno)
-    }
-);
-
-
-// PUT
-await fetch(
-    `http://127.0.0.1:8000/alunos/${id}`,
-    {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(aluno)
-    }
-);
-
-
-// DELETE
-await fetch(
-    `http://127.0.0.1:8000/alunos/${id}`,
-    {
-        method: "DELETE"
-    }
-);
-```
-
-------------------------------------------------------------------------
-
-# 54. Fluxo completo de um GET
-
-Quando executamos:
-
-``` javascript
-let response = await fetch(
-    "http://127.0.0.1:8000/alunos"
-);
-```
-
-temos:
-
-``` text
-1. JavaScript
-       │
-       │ GET /alunos
-       ▼
-2. FastAPI
-       │
-       │ SELECT ...
-       ▼
-3. SQLite
-       │
-       │ registros
-       ▼
-4. FastAPI
-       │
-       │ JSON
-       ▼
-5. JavaScript
-       │
-       │ response.json()
-       ▼
-6. objeto/lista JavaScript
-```
-
-------------------------------------------------------------------------
-
-# 55. CORS
-
-Existe uma questão importante quando frontend e backend são executados
-em origens diferentes.
-
-Por exemplo:
-
-``` text
-Frontend:
-http://localhost:5500
-
-Backend:
-http://127.0.0.1:8000
-```
-
-O navegador pode bloquear a comunicação por causa da política de mesma
-origem.
-
-Para permitir comunicação durante o desenvolvimento, podemos configurar
-CORS.
-
-No FastAPI:
-
-``` python
-from fastapi.middleware.cors import CORSMiddleware
-```
-
-Depois:
-
-``` python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
-```
-
-Exemplo completo:
-
-``` python
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-
-app = FastAPI()
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
-```
-
-## Atenção
-
-O uso:
-
-``` python
-allow_origins=["*"]
-```
-
-é conveniente para fins didáticos.
-
-Em produção, é preferível especificar as origens autorizadas.
-
-Exemplo:
-
-``` python
-allow_origins=[
-    "http://localhost:5500"
-]
-```
-
-------------------------------------------------------------------------
-
-# 56. Servindo o frontend
-
-Uma maneira simples de servir o HTML é utilizar o servidor HTTP do
-Python.
-
-Entre no diretório:
+Para servir o frontend, lembre-se de abrir um novo terminal e executar:
 
 ``` bash
 cd frontend
-```
-
-Execute:
-
-``` bash
 python -m http.server 5500
 ```
 
-Agora:
+E acesse em seu navegador:
 
 ``` text
-Frontend:
 http://127.0.0.1:5500
 ```
 
-Enquanto:
-
-``` text
-Backend:
-http://127.0.0.1:8000
-```
-
-Temos dois servidores:
-
-``` text
-┌─────────────────────┐
-│ Python HTTP Server  │
-│      :5500          │
-│      HTML/JS        │
-└─────────┬───────────┘
-          │
-          │ fetch()
-          ▼
-┌─────────────────────┐
-│       FastAPI       │
-│        :8000        │
-└─────────┬───────────┘
-          │
-          ▼
-       SQLite
-```
-
-------------------------------------------------------------------------
-
-# 57. Exibindo os alunos na página
-
-Podemos modificar o HTML:
+Código completo do `frontend/index.html`:
 
 ``` html
 <!DOCTYPE html>
@@ -3264,29 +2902,183 @@ Podemos modificar o HTML:
 
     <meta charset="UTF-8">
 
-    <title>Alunos</title>
+    <title>API de Alunos</title>
+
+    <!-- Arquivo de estilização CSS externa -->
+    <link rel="stylesheet" href="style.css">
 
 </head>
 
 <body>
 
-    <h1>Lista de alunos</h1>
+    <h1>API de Alunos</h1>
+
+    <!-- 1. Formulário para cadastro (POST) -->
+    <h2>Cadastrar Aluno</h2>
+
+    <input id="nome" placeholder="Nome">
+
+    <input id="email" placeholder="E-mail">
+
+    <input id="idade" type="number" placeholder="Idade">
+
+    <button onclick="cadastrarAluno()">
+        Cadastrar
+    </button>
+
+    <hr>
+
+    <!-- 2. Consulta e exibição de todos os alunos (GET) -->
+    <h2>Lista de Alunos</h2>
 
     <button onclick="consultarAlunos()">
-        Consultar alunos
+        Consultar Alunos
     </button>
 
     <div id="resultado"></div>
 
+    <hr>
+
+    <!-- 3. Consulta de aluno específico por ID (GET por ID) -->
+    <h2>Consultar Aluno por ID</h2>
+
+    <input id="idConsulta" type="number" placeholder="ID do aluno">
+
+    <button onclick="consultarAlunoPorId()">
+        Consultar
+    </button>
+
+    <div id="resultadoIndividual"></div>
+
 
     <script>
 
+        const API_URL = "http://127.0.0.1:8000/alunos";
+
+
+        // 1. GET: Consultar e listar todos os alunos
         async function consultarAlunos() {
 
             try {
 
+                let response = await fetch(API_URL);
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `Erro HTTP: ${response.status}`
+                    );
+                }
+
+                let dados = await response.json();
+
+                console.log(dados);
+
+                let resultado = document.getElementById("resultado");
+
+                resultado.innerHTML = "";
+
+                if (dados.length === 0) {
+
+                    resultado.innerHTML = "<p>Nenhum aluno cadastrado.</p>";
+                    return;
+                }
+
+                for (let aluno of dados) {
+
+                    resultado.innerHTML += `
+                        <p>
+                            ID: ${aluno.id} - ${aluno.nome} (${aluno.email}) - ${aluno.idade} anos
+                            <button onclick="excluirAluno(${aluno.id})">Excluir</button>
+                        </p>
+                    `;
+                }
+
+            } catch (erro) {
+
+                console.log(
+                    `O erro retornado foi ${erro}.`
+                );
+            }
+        }
+
+
+        // 2. GET por ID: Consultar aluno por ID
+        async function consultarAlunoPorId() {
+
+            let id = document.getElementById("idConsulta").value;
+
+            if (!id) {
+
+                alert("Informe um ID para consultar.");
+                return;
+            }
+
+            try {
+
+                let response = await fetch(`${API_URL}/${id}`);
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `Erro HTTP: ${response.status}`
+                    );
+                }
+
+                let aluno = await response.json();
+
+                console.log(aluno);
+
+                let painel = document.getElementById("resultadoIndividual");
+
+                painel.innerHTML = `
+                    <p>
+                        <strong>ID:</strong> ${aluno.id} <br>
+                        <strong>Nome:</strong> ${aluno.nome} <br>
+                        <strong>E-mail:</strong> ${aluno.email} <br>
+                        <strong>Idade:</strong> ${aluno.idade} anos
+                    </p>
+                `;
+
+            } catch (erro) {
+
+                console.log(
+                    `O erro retornado foi ${erro}.`
+                );
+
+                document.getElementById("resultadoIndividual").innerHTML =
+                    "<p>Aluno não encontrado.</p>";
+            }
+        }
+
+
+        // 3. POST: Cadastrar novo aluno
+        async function cadastrarAluno() {
+
+            let aluno = {
+
+                nome: document.getElementById("nome").value,
+
+                email: document.getElementById("email").value,
+
+                idade: Number(
+                    document.getElementById("idade").value
+                )
+            };
+
+            try {
+
                 let response = await fetch(
-                    "http://127.0.0.1:8000/alunos"
+                    API_URL,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify(aluno)
+                    }
                 );
 
                 if (!response.ok) {
@@ -3300,24 +3092,98 @@ Podemos modificar o HTML:
 
                 console.log(dados);
 
-                let resultado =
-                    document.getElementById(
-                        "resultado"
+                alert("Aluno cadastrado com sucesso!");
+
+                // Limpa os campos do formulário
+                document.getElementById("nome").value = "";
+                document.getElementById("email").value = "";
+                document.getElementById("idade").value = "";
+
+                // Atualiza a listagem de alunos
+                consultarAlunos();
+
+            } catch (erro) {
+
+                console.log(
+                    `O erro retornado foi ${erro}.`
+                );
+            }
+        }
+
+
+        // 4. PUT: Alterar aluno existente
+        async function alterarAluno(id, novosDados) {
+
+            try {
+
+                let response = await fetch(
+                    `${API_URL}/${id}`,
+                    {
+                        method: "PUT",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify(novosDados)
+                    }
+                );
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `Erro HTTP: ${response.status}`
                     );
-
-                resultado.innerHTML = "";
-
-                for (let aluno of dados) {
-
-                    resultado.innerHTML += `
-                        <p>
-                            ${aluno.id} -
-                            ${aluno.nome} -
-                            ${aluno.email} -
-                            ${aluno.idade}
-                        </p>
-                    `;
                 }
+
+                let dados = await response.json();
+
+                console.log(dados);
+
+                alert("Aluno atualizado com sucesso!");
+
+                consultarAlunos();
+
+            } catch (erro) {
+
+                console.log(
+                    `O erro retornado foi ${erro}.`
+                );
+            }
+        }
+
+
+        // 5. DELETE: Excluir aluno existente
+        async function excluirAluno(id) {
+
+            if (!confirm(`Deseja realmente excluir o aluno com ID ${id}?`)) {
+
+                return;
+            }
+
+            try {
+
+                let response = await fetch(
+                    `${API_URL}/${id}`,
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `Erro HTTP: ${response.status}`
+                    );
+                }
+
+                let dados = await response.json();
+
+                console.log(dados);
+
+                alert("Aluno excluído com sucesso!");
+
+                consultarAlunos();
 
             } catch (erro) {
 
@@ -3336,190 +3202,150 @@ Podemos modificar o HTML:
 
 ------------------------------------------------------------------------
 
-# 58. O que aconteceu?
+# 50. Codigo CSS
 
-O JavaScript:
+Crie o arquivo frontend/style.css
 
-``` javascript
-let dados = await response.json();
-```
+/* ==========================================================================
+   Estilização Simples e Moderna para API de Alunos
+   Arquivo: frontend/style.css
+   ========================================================================== */
 
-recebe uma lista:
-
-``` javascript
-[
-    {
-        id: 1,
-        nome: "Ana",
-        email: "ana@email.com",
-        idade: 20
-    },
-    {
-        id: 2,
-        nome: "Carlos",
-        email: "carlos@email.com",
-        idade: 22
-    }
-]
-```
-
-Depois:
-
-``` javascript
-for (let aluno of dados)
-```
-
-percorre cada aluno.
-
-Finalmente:
-
-``` javascript
-aluno.nome
-```
-
-acessa a propriedade `nome`.
-
-------------------------------------------------------------------------
-
-# 59. Formulário para cadastro
-
-Podemos criar:
-
-``` html
-<h2>Cadastrar aluno</h2>
-
-<input
-    id="nome"
-    placeholder="Nome"
->
-
-<input
-    id="email"
-    placeholder="E-mail"
->
-
-<input
-    id="idade"
-    type="number"
-    placeholder="Idade"
->
-
-<button onclick="cadastrarAluno()">
-    Cadastrar
-</button>
-```
-
-------------------------------------------------------------------------
-
-# 60. Função de cadastro
-
-``` javascript
-async function cadastrarAluno() {
-
-    let aluno = {
-
-        nome: document.getElementById(
-            "nome"
-        ).value,
-
-        email: document.getElementById(
-            "email"
-        ).value,
-
-        idade: Number(
-            document.getElementById(
-                "idade"
-            ).value
-        )
-
-    };
-
-
-    try {
-
-        let response = await fetch(
-            "http://127.0.0.1:8000/alunos",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify(aluno)
-            }
-        );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Erro HTTP: ${response.status}`
-            );
-        }
-
-
-        let dados = await response.json();
-
-
-        console.log(dados);
-
-
-        alert(
-            "Aluno cadastrado com sucesso!"
-        );
-
-
-    } catch (erro) {
-
-        console.log(
-            `O erro retornado foi ${erro}.`
-        );
-    }
+/* Configurações Globais */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
-```
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f3f4f6;
+    color: #1f2937;
+    line-height: 1.6;
+    padding: 30px 15px;
+}
+
+/* Centralização do Conteúdo Principal */
+body {
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+/* Títulos */
+h1 {
+    font-size: 1.8rem;
+    color: #111827;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+h2 {
+    font-size: 1.25rem;
+    color: #374151;
+    margin-top: 20px;
+    margin-bottom: 12px;
+}
+
+/* Linha Divisória */
+hr {
+    border: 0;
+    border-top: 1px solid #e5e7eb;
+    margin: 25px 0;
+}
+
+/* Campos de Entrada (Inputs) */
+input {
+    width: 100%;
+    max-width: 200px;
+    padding: 9px 12px;
+    margin: 4px 6px 12px 0;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background-color: #ffffff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Botões Principais */
+button {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 9px 16px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* Botão de Excluir dentro da lista */
+#resultado button {
+    background-color: #ef4444;
+    color: #ffffff;
+    padding: 5px 10px;
+    font-size: 0.85rem;
+    margin-left: 12px;
+    margin-bottom: 0;
+}
+
+#resultado button:hover {
+    background-color: #dc2626;
+}
+
+/* Área de Exibição dos Alunos (Lista) */
+#resultado {
+    margin-top: 15px;
+}
+
+#resultado p {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Área de Exibição de Aluno Individual por ID */
+#resultadoIndividual {
+    margin-top: 15px;
+}
+
+#resultadoIndividual p {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #2563eb;
+    border-radius: 6px;
+    padding: 14px 18px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+
 
 ------------------------------------------------------------------------
 
-# 61. Atenção ao `Number()`
-
-O valor obtido de:
-
-``` javascript
-document.getElementById("idade").value
-```
-
-é uma string.
-
-Por isso:
-
-``` javascript
-Number(...)
-```
-
-converte o valor para número.
-
-Exemplo:
-
-``` javascript
-Number("20")
-```
-
-resulta em:
-
-``` text
-20
-```
-
-Isso é importante porque o modelo Pydantic espera:
-
-``` python
-idade: int
-```
-
-------------------------------------------------------------------------
-
-# 62. Validação pelo Pydantic
+# 51. Validação pelo Pydantic
 
 Se enviarmos:
 
@@ -3544,7 +3370,7 @@ pela API.
 
 ------------------------------------------------------------------------
 
-# 63. Status HTTP importantes
+# 52. Status HTTP importantes
 
 Alguns códigos que o aluno deve conhecer:
 
@@ -3573,196 +3399,7 @@ Erro interno           → 500
 
 ------------------------------------------------------------------------
 
-# 64. Uma observação importante sobre `fetch()`
-
-`fetch()` normalmente **não entra no `catch()` apenas porque o servidor
-retornou 404 ou 500**.
-
-Por isso é importante verificar:
-
-``` javascript
-if (!response.ok) {
-    throw new Error(
-        `Erro HTTP: ${response.status}`
-    );
-}
-```
-
-Assim podemos transformar um status HTTP de erro em uma exceção tratável
-pelo `catch`.
-
-------------------------------------------------------------------------
-
-# 65. Exemplo completo de função de consulta
-
-Um padrão que poderá ser reutilizado pelos alunos:
-
-``` javascript
-async function consultarAlunos() {
-
-    console.log("Consultando API...");
-
-
-    try {
-
-        let response = await fetch(
-            "http://127.0.0.1:8000/alunos"
-        );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Erro HTTP: ${response.status}`
-            );
-        }
-
-
-        let dados = await response.json();
-
-
-        console.log(
-            "Dados recebidos:"
-        );
-
-        console.log(dados);
-
-
-    } catch (erro) {
-
-        console.log(
-            `O erro retornado foi ${erro}.`
-        );
-    }
-}
-```
-
-Esse padrão é muito semelhante ao utilizado em APIs públicas como o
-ViaCEP.
-
-------------------------------------------------------------------------
-
-# 66. Comparação com o ViaCEP
-
-O exemplo:
-
-``` javascript
-async function consultaCEP(cep) {
-
-    console.log(
-        `buscando CEP ${cep}...`
-    );
-
-    try {
-
-        let response = await fetch(
-            `https://viacep.com.br/ws/${cep}/json/`
-        );
-
-        let dados = await response.json();
-
-        if (dados.erro) {
-
-            console.log(
-                "CEP nao encontrado"
-            );
-
-            return;
-        }
-
-        console.log(
-            `Rua: ${dados.logradouro}`
-        );
-
-    } catch (erro) {
-
-        console.log(
-            `O erro retornado foi ${erro}.`
-        );
-    }
-}
-```
-
-é conceitualmente muito semelhante ao nosso consumo:
-
-``` javascript
-async function consultarAlunos() {
-
-    try {
-
-        let response = await fetch(
-            "http://127.0.0.1:8000/alunos"
-        );
-
-        let dados = await response.json();
-
-        console.log(dados);
-
-    } catch (erro) {
-
-        console.log(
-            `O erro retornado foi ${erro}.`
-        );
-    }
-}
-```
-
-A diferença é que agora **nós mesmos construímos o servidor FastAPI**.
-
-------------------------------------------------------------------------
-
-# 67. A grande ideia da aula
-
-No ViaCEP:
-
-``` text
-JavaScript
-    │
-    │ fetch()
-    ▼
-Internet
-    │
-    ▼
-ViaCEP
-```
-
-No nosso projeto:
-
-``` text
-JavaScript
-    │
-    │ fetch()
-    ▼
-FastAPI
-    │
-    ▼
-SQLite
-```
-
-Portanto, depois que o aluno aprende a consumir uma API pública, criar
-uma API própria é o próximo passo natural.
-
-------------------------------------------------------------------------
-
-# 68. Fluxo completo do projeto
-
-``` text
-                 REQUISIÇÃO
-JavaScript ─────────────────────────► FastAPI
-   │                                     │
-   │                                     │
-   │                                     ▼
-   │                                  SQLite
-   │                                     │
-   │                                     │
-   │                                     ▼
-   ◄──────────────────────────────── JSON
-                 RESPOSTA
-```
-
-------------------------------------------------------------------------
-
-# 69. Estrutura conceitual
+# 53. Estrutura conceitual
 
 O aluno deve compreender as três camadas:
 
@@ -3798,163 +3435,10 @@ SQLite
 
 Responsável por armazenar os dados.
 
-------------------------------------------------------------------------
-
-# 70. O que NÃO fazer inicialmente
-
-Para alunos iniciantes, não é recomendável começar imediatamente com:
-
--   Docker;
--   Kubernetes;
--   PostgreSQL;
--   SQLAlchemy;
--   autenticação JWT;
--   OAuth2;
--   microsserviços;
--   Redis;
--   filas;
--   AWS;
--   CI/CD.
-
-Esses assuntos são importantes, mas devem aparecer posteriormente.
-
-Primeiro o aluno precisa dominar:
-
-``` text
-HTTP
-  ↓
-FastAPI
-  ↓
-CRUD
-  ↓
-SQLite
-  ↓
-JSON
-  ↓
-fetch()
-```
 
 ------------------------------------------------------------------------
 
-# 71. Exercícios de fixação
-
-## Exercício 1
-
-Crie um endpoint:
-
-``` text
-GET /sobre
-```
-
-que retorne:
-
-``` json
-{
-    "nome": "API de Alunos",
-    "autor": "Seu nome"
-}
-```
-
-------------------------------------------------------------------------
-
-## Exercício 2
-
-Crie:
-
-``` text
-GET /alunos/{id}
-```
-
-e faça o endpoint retornar:
-
-``` json
-{
-    "id": 10,
-    "mensagem": "Consulta realizada"
-}
-```
-
-------------------------------------------------------------------------
-
-## Exercício 3
-
-Crie um endpoint:
-
-``` text
-GET /saudacao?nome=Maria
-```
-
-que retorne:
-
-``` json
-{
-    "mensagem": "Olá, Maria!"
-}
-```
-
-------------------------------------------------------------------------
-
-## Exercício 4
-
-Crie um modelo:
-
-``` python
-class Produto(BaseModel):
-
-    nome: str
-    preco: float
-    estoque: int
-```
-
-------------------------------------------------------------------------
-
-## Exercício 5
-
-Crie:
-
-``` text
-POST /produtos
-```
-
-e teste pelo Swagger.
-
-------------------------------------------------------------------------
-
-## Exercício 6
-
-Crie uma função JavaScript:
-
-``` javascript
-async function consultarProdutos()
-```
-
-que utilize:
-
-``` javascript
-fetch()
-```
-
-para consultar:
-
-``` text
-GET /produtos
-```
-
-------------------------------------------------------------------------
-
-## Exercício 7
-
-Faça a função JavaScript mostrar os produtos no console.
-
-------------------------------------------------------------------------
-
-## Exercício 8
-
-Faça uma página HTML mostrar os produtos em uma tabela.
-
-------------------------------------------------------------------------
-
-# 71. Exercício final
+# 54. Exercício final
 
 Construa uma aplicação completa de cadastro de livros.
 
@@ -3993,7 +3477,7 @@ A página HTML deverá permitir:
 
 ------------------------------------------------------------------------
 
-# 73. Desafio adicional
+# 55. Desafio adicional
 
 Adicione uma busca:
 
@@ -4027,7 +3511,7 @@ para executar a consulta.
 
 ------------------------------------------------------------------------
 
-# 74. Desafio de tratamento de erros
+# 56. Desafio de tratamento de erros
 
 Faça o frontend apresentar mensagens diferentes para:
 
@@ -4047,7 +3531,7 @@ para identificar o código HTTP.
 
 ------------------------------------------------------------------------
 
-# 75. Checklist do aluno
+# 57. Checklist do aluno
 
 Antes de considerar o projeto concluído, verifique se você consegue
 responder:
@@ -4109,7 +3593,7 @@ responder:
 
 ------------------------------------------------------------------------
 
-# 76. Resumo final
+# 58. Resumo final
 
 O aluno começou com:
 
@@ -4172,7 +3656,7 @@ Learning e serviços de inferência.
 
 ------------------------------------------------------------------------
 
-# 77. Próximos passos
+# 59. Próximos passos
 
 Depois de dominar este projeto, o aluno poderá avançar para:
 
@@ -4218,7 +3702,7 @@ consumível por aplicações web**.
 
 ------------------------------------------------------------------------
 
-# 78. Comandos essenciais --- resumo
+# 60. Comandos essenciais --- resumo
 
 Criar ambiente:
 
